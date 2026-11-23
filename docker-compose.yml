@@ -1,0 +1,33 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-api_monitoring}
+      POSTGRES_USER: ${POSTGRES_USER:-hamsafarah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-hamsafarah} -d $${POSTGRES_DB:-api_monitoring}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-api_monitoring}
+      DB_USERNAME: ${POSTGRES_USER:-hamsafarah}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}
+      MONITORING_SCHEDULER_ENABLED: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

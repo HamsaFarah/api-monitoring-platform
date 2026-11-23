@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>Pulse — API Monitoring</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#"><span class="brand-mark">p</span><span>pulse<span class="brand-sub">API OBSERVABILITY</span></span></a>
+    <div class="nav-label">WORKSPACE</div>
+    <button class="nav-item active" data-view="overview"><span>◫</span> Overview</button>
+    <button class="nav-item" data-view="endpoints"><span>◎</span> Monitored endpoints</button>
+    <button class="nav-item" data-view="incidents"><span>△</span> Incidents <span id="nav-open-count" class="nav-count">0</span></button>
+    <div class="sidebar-bottom"><span class="live-dot"></span> API service <strong id="api-state">Checking…</strong><small>Local workspace</small></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><div class="eyebrow">MONITORING WORKSPACE</div><h1 id="page-title">Overview</h1></div>
+      <div class="top-actions"><span class="refresh-label" id="last-updated">Updating…</span><button class="btn btn-primary" id="add-endpoint">＋ Add endpoint</button></div>
+    </header>
+
+    <section id="view-overview" class="view">
+      <div class="welcome-row"><div><h2>Your APIs, at a glance.</h2><p>Monitor availability, inspect checks, and stay ahead of incidents.</p></div><button class="btn btn-secondary" id="refresh-all">↻ Refresh</button></div>
+      <div class="stat-grid">
+        <article class="stat-card"><div class="stat-top"><span>Total endpoints</span><span class="stat-icon violet">◎</span></div><div class="stat-value" id="stat-endpoints">—</div><div class="stat-foot">Configured monitors</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Open incidents</span><span class="stat-icon red">△</span></div><div class="stat-value" id="stat-incidents">—</div><div class="stat-foot">Require attention</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Checks performed</span><span class="stat-icon blue">↗</span></div><div class="stat-value" id="stat-checks">—</div><div class="stat-foot">Recorded health checks</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Success rate</span><span class="stat-icon green">✓</span></div><div class="stat-value" id="stat-success">—</div><div class="stat-foot">Across all recorded checks</div></article>
+      </div>
+      <div class="section-heading"><div><h2>Monitored endpoints</h2><p>Your configured services and their latest state</p></div><button class="text-btn" data-go="endpoints">View all →</button></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>ENDPOINT</th><th>METHOD</th><th>STATUS</th><th>LAST CHECK</th><th>LATENCY</th><th></th></tr></thead><tbody id="overview-endpoints"><tr><td colspan="6" class="empty">Loading endpoints…</td></tr></tbody></table></div></div>
+      <div class="section-heading"><div><h2>Recent incidents</h2><p>Latest service disruptions</p></div><button class="text-btn" data-go="incidents">View all →</button></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>INCIDENT</th><th>ENDPOINT</th><th>REASON</th><th>FAILURES</th><th>STARTED</th><th>STATUS</th></tr></thead><tbody id="overview-incidents"><tr><td colspan="6" class="empty">Loading incidents…</td></tr></tbody></table></div></div>
+    </section>
+
+    <section id="view-endpoints" class="view hidden">
+      <div class="welcome-row"><div><h2>Endpoint directory</h2><p>Configure and manually run health checks for each endpoint.</p></div><button class="btn btn-primary" id="add-endpoint-2">＋ New endpoint</button></div>
+      <div class="toolbar"><input id="endpoint-search" class="search" placeholder="⌕  Search endpoints by name or URL…" aria-label="Search endpoints"><span id="endpoint-count" class="muted"></span></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>ENDPOINT</th><th>METHOD</th><th>EXPECTED</th><th>ENABLED</th><th>CREATED</th><th>ACTIONS</th></tr></thead><tbody id="endpoint-rows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div></div>
+    </section>
+
+    <section id="view-incidents" class="view hidden">
+      <div class="welcome-row"><div><h2>Incident center</h2><p>Track failures from detection through recovery.</p></div><select id="incident-filter" class="select"><option value="">All incidents</option><option value="OPEN">Open</option><option value="RESOLVED">Resolved</option></select></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>INCIDENT</th><th>ENDPOINT</th><th>REASON</th><th>FAILURES</th><th>STARTED</th><th>RESOLVED</th><th>STATUS</th></tr></thead><tbody id="incident-rows"><tr><td colspan="7" class="empty">Loading incidents…</td></tr></tbody></table></div></div>
+    </section>
+
+    <footer>Pulse Monitoring <span>·</span> Built for reliable APIs <span class="footer-right">Spring Boot · PostgreSQL</span></footer>
+  </main>
+</div>
+
+<div class="modal-backdrop hidden" id="endpoint-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <form class="modal" id="endpoint-form">
+    <div class="modal-head"><div><div class="eyebrow">ENDPOINT CONFIGURATION</div><h2 id="modal-title">Add endpoint</h2></div><button type="button" class="icon-btn" id="close-modal" aria-label="Close">×</button></div>
+    <div id="form-error" class="alert hidden"></div>
+    <input type="hidden" id="endpoint-id">
+    <label>Display name<input name="name" id="field-name" required maxlength="120" placeholder="Production API"></label>
+    <label>Endpoint URL<input name="url" id="field-url" type="url" required placeholder="https://api.example.com/health"></label>
+    <div class="form-grid">
+      <label>HTTP method<select name="method" id="field-method"><option>GET</option><option>HEAD</option><option>POST</option><option>OPTIONS</option></select></label>
+      <label>Expected status<input name="expectedStatus" id="field-status" type="number" min="100" max="599" value="200" required></label>
+      <label>Interval (seconds)<input name="intervalSeconds" id="field-interval" type="number" min="1" max="86400" value="60" required></label>
+      <label>Timeout (ms)<input name="timeoutMs" id="field-timeout" type="number" min="100" max="120000" value="5000" required></label>
+      <label class="full">Latency threshold (ms)<input name="latencyThresholdMs" id="field-latency" type="number" min="1" placeholder="Optional"></label>
+    </div>
+    <label class="check-label"><input type="checkbox" id="field-enabled" checked> Enable this monitor</label>
+    <div class="modal-actions"><button type="button" class="btn btn-secondary" id="cancel-modal">Cancel</button><button class="btn btn-primary" id="save-endpoint" type="submit">Save endpoint</button></div>
+  </form>
+</div>
+
+<div class="drawer-backdrop hidden" id="detail-backdrop">
+  <aside class="drawer"><div class="drawer-head"><div><div class="eyebrow" id="drawer-kicker">ENDPOINT DETAILS</div><h2 id="drawer-title">History</h2></div><button class="icon-btn" id="close-drawer" aria-label="Close">×</button></div>
+    <div id="drawer-content"></div>
+    <div class="drawer-pagination"><button class="btn btn-secondary btn-small" id="history-prev">← Previous</button><span id="history-page">Page 1</span><button class="btn btn-secondary btn-small" id="history-next">Next →</button></div>
+  </aside>
+</div>
+<div id="toast-region" class="toast-region" aria-live="polite"></div>
+<script src="/app.js" defer></script>
+</body>
+</html>
